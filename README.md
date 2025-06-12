@@ -64,10 +64,3 @@ streamlit run app.py
 4. Start chatting and tracking satisfaction!
 
 ---
-
-
-## 📬 Contact
-
-Email : amroadnanb@gmail.com
-
----
