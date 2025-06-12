@@ -31,7 +31,7 @@ This project provides a smart tool to **track and evaluate customer satisfaction
 
 ## 🛠️ Requirements
 
-* Python 3.13.0
+* Python 3.13.X
 * `requests`
 * `streamlit`
 
