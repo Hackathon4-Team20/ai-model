@@ -63,4 +63,3 @@ streamlit run app.py
 3. Enter your OpenRouter API key.
 4. Start chatting and tracking satisfaction!
 
----
