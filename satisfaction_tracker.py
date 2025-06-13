@@ -2,15 +2,13 @@ import requests
 import json
 import re
 import logging
-import time
 from typing import Optional, Dict
 
 
 def default_filter(message: str) -> bool:
     """
-    يتحقق مما إذا كانت الرسالة صغيرة أو ترحيبية لتجاهلها.
+    يتحقق مما إذا كانت الرسالة صغيرة جداً أو تحية أو شكراً لتجاهلها.
     """
-    # تجاهل التحيات الشائعة أو الرسائل القصيرة جداً
     greetings = [r"^مرحبا", r"^أهلاً", r"^السلام عليكم", r"^شكراً", r"^thanks"]
     if len(message.strip()) < 5:
         return True
@@ -18,6 +16,7 @@ def default_filter(message: str) -> bool:
         if re.search(pattern, message, re.IGNORECASE):
             return True
     return False
+
 
 class SatisfactionTracker:
 
@@ -40,7 +39,6 @@ class SatisfactionTracker:
             "Content-Type": "application/json",
         })
 
-
         self.score = initial_score
         self.history = []
         self.summary: str = ""
@@ -50,14 +48,18 @@ class SatisfactionTracker:
         self._calls = 0
 
     def add_message(self, role: str, message: str) -> Dict:
-
+        """
+        إضافة رسالة جديدة للنظام وتقييمها.
+        """
         if role == 'user' and default_filter(message):
             self.logger.debug("تجاهل رسالة فلترة: %s", message)
+            # لا نغير الدرجة، نعيدها كما هي
             return {"updated_score": self.score, "status": self._status(), "reason": "رسالة غير دالة"}
 
         self.history.append({"role": role, "content": message})
         self._calls += 1
 
+        # تحديث الملخص دوريًا بعد عدد معين من الرسائل
         if len(self.history) % self.summary_interval == 0:
             self._update_summary()
 
@@ -66,7 +68,7 @@ class SatisfactionTracker:
         try:
             response = self._call_llm(prompt)
         except Exception as e:
-            self.logger.error("خطأ في _call_llm: %s", e)
+            self.logger.error("خطأ في الاتصال بالنموذج: %s", e)
             return {"updated_score": self.score, "status": self._status(), "reason": "فشل في الاتصال بالنموذج"}
 
         result = self._parse_response(response)
@@ -79,6 +81,9 @@ class SatisfactionTracker:
         return result
 
     def _build_prompt(self, new_message: str) -> Dict:
+        """
+        بناء برومبت للنموذج مع تضمين ملخص الحوارات السابقة وآخر 6 رسائل.
+        """
         parts = []
         if self.summary:
             parts.append(f"ملخص الحوارات السابقة: {self.summary}")
@@ -87,15 +92,16 @@ class SatisfactionTracker:
             prefix = "العميل" if msg['role'] == 'user' else "الدعم"
             parts.append(f"{prefix}: {msg['content']}")
 
-        parts.append(f"الرسالة الجديدة ({'العميل' if new_message else 'الدعم'}): {new_message}")
+        parts.append(f"الرسالة الجديدة (العميل): {new_message}")
         conversation = "\n".join(parts)
 
         system_content = (
             "أنت مساعد خبير بتقييم رضا العملاء.\n"
             "قاعدة التقييم: 1 = غير راضٍ تماماً، 5 = راضٍ تماماً.\n"
+            "تفسير الرموز التعبيرية (الإيموجي) جزء مهم من تقييم الرضا.\n"
+            "مثلاً، 😊 تعني رضا، و😞 تعني عدم رضا.\n"
             "تجاهل التحيات والعبارات غير الدالة.\n"
-            "إذا كانت الرسالة لا تحتوي على أي مؤشر لرضا أو عدم رضا (مثل رقم هاتف، تحية، سؤال عام)، أرجع \"updated_score\": 0 للدلالة على أن الدرجة لم تتغير.\n"
-            "عند كل رسالة جديدة، حدِّث درجة الرضا، ثم اذكر الحالة ('راضٍ' أو 'غير راضٍ') وسبباً موجزاً.\n"
+            "إذا كانت الرسالة لا تحتوي على أي مؤشر لرضا أو عدم رضا (مثل رقم هاتف، تحية، سؤال عام)، أرجع \"updated_score\": 0.\n"
             "أجب دائماً بصيغة JSON: {\n"
             "  \"updated_score\": <int>,\n"
             "  \"status\": \"راضٍ\"|\"غير راضٍ\",\n"
@@ -113,6 +119,9 @@ class SatisfactionTracker:
         }
 
     def _call_llm(self, payload: Dict) -> str:
+        """
+        استدعاء API للنموذج والحصول على الرد.
+        """
         resp = self.session.post(
             "https://openrouter.ai/api/v1/chat/completions",
             json=payload
@@ -122,10 +131,14 @@ class SatisfactionTracker:
         return data['choices'][0]['message']['content']
 
     def _parse_response(self, text: str) -> Dict:
+        """
+        تحويل النص المردود من النموذج إلى قاموس Python.
+        """
         try:
             result = json.loads(text)
             score = int(result.get('updated_score', self.score))
 
+            # في حالة returned_score == 0، لا نغير الدرجة
             if score == 0:
                 score = self.score
 
@@ -133,6 +146,7 @@ class SatisfactionTracker:
             reason = result.get('reason', '').strip()
             return {"updated_score": score, "status": status, "reason": reason}
         except Exception:
+            # محاولة استخراج رقم من النص كدرجة بديلة
             score = self.score
             m = re.search(r"(\d)", text)
             if m:
@@ -142,14 +156,21 @@ class SatisfactionTracker:
             return {"updated_score": score, "status": status, "reason": reason}
 
     def _status(self, score: Optional[int] = None) -> str:
+        """
+        تحديد حالة الرضا بناءً على الدرجة.
+        """
         s = score if score is not None else self.score
         return "راضٍ" if s >= 3 else "غير راضٍ"
 
     def _update_summary(self):
+        """
+        تحديث الملخص للحفاظ على أداء أفضل مع المحادثات الطويلة.
+        """
         segment = self.history[:-6]
         if not segment:
             return
         text_block = " ".join([m['content'] for m in segment])[:2000]
+
         prompt = (
             "أنت مساعد خبير. لخّص المحادثة التالية في جملة أو جملتين: '" + text_block + "'"
         )
@@ -172,6 +193,8 @@ class SatisfactionTracker:
         except Exception as e:
             self.logger.warning("فشل تحديث الملخص: %s", e)
 
+
+# ======= مثال على الاستخدام =======
 # tracker = SatisfactionTracker(openrouter_api_key="API_KEY_HERE")
 # print(tracker.add_message('user', 'الخدمة سيئة جدا'))
 # print(tracker.add_message('assistant', 'نعتذر عن الخطأ'))

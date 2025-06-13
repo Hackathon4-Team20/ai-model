@@ -1,0 +1,7 @@
+Flask
+requests
+python-dotenv
+flasgger
+transformers 
+torch
+huggingface-hub
