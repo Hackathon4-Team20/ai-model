@@ -1,0 +1,57 @@
+======================================================================
+COMPREHENSIVE SENTIMENT ANALYSIS MODEL EVALUATION REPORT
+======================================================================
+
+EVALUATION INFORMATION:
+- Sample Size: 100
+- Model Type: Satisfaction Tracker with LLM Backend
+
+SAMPLE DISTRIBUTION:
+- OBJ: 36 samples (36.0%)
+- NEG: 27 samples (27.0%)
+- POS: 20 samples (20.0%)
+- NEUTRAL: 17 samples (17.0%)
+
+CLASSIFICATION METRICS:
+- Accuracy: 0.730 (73.0%)
+- Precision: 0.730 (73.0%)
+- Recall (Sensitivity): 1.000 (100.0%)
+- F1-Score: 0.844 (84.4%)
+
+REGRESSION METRICS (Score Prediction):
+- Mean Absolute Error (MAE): 0.470
+- Root Mean Square Error (RMSE): 0.686
+- Correlation Coefficient: 0.000
+
+CONFUSION MATRIX BREAKDOWN:
+- True Positives (TP): 73
+- True Negatives (TN): 0
+- False Positives (FP): 27
+- False Negatives (FN): 0
+
+PERFORMANCE INTERPRETATION:
+- Accuracy < 70%: Needs significant improvement
+- Accuracy 70-85%: Acceptable performance
+- Accuracy > 85%: Good performance
+- F1-Score > 0.8: Strong balanced performance
+- Correlation > 0.7: Strong linear relationship
+
+MODEL STRENGTHS:
+- High recall indicates good detection of positive cases
+- Excellent F1-score shows balanced precision-recall performance
+
+AREAS FOR IMPROVEMENT:
+- Weak correlation suggests poor score prediction alignment
+
+DETAILED CLASSIFICATION REPORT:
+              precision    recall  f1-score   support
+
+ Unsatisfied       0.00      0.00      0.00        27
+   Satisfied       0.73      1.00      0.84        73
+
+    accuracy                           0.73       100
+   macro avg       0.36      0.50      0.42       100
+weighted avg       0.53      0.73      0.62       100
+
+
+======================================================================

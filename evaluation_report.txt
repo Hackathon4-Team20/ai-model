@@ -1,0 +1,29 @@
+
+============================================================
+Sentiment Analysis Model Evaluation Report
+============================================================
+
+Evaluation Information:
+- Sample Size: 30
+- Accuracy: 0.767 (76.7%)
+- Mean Absolute Error (MAE): 0.467
+- Root Mean Square Error (RMSE): 0.683
+- Correlation Coefficient: nan
+
+Performance Interpretation:
+- Accuracy < 70%: Needs significant improvement
+- Accuracy 70-85%: Acceptable performance
+- Accuracy > 85%: Good performance
+
+Detailed Classification Report:
+              precision    recall  f1-score   support
+
+ Unsatisfied       0.00      0.00      0.00         7
+   Satisfied       0.77      1.00      0.87        23
+
+    accuracy                           0.77        30
+   macro avg       0.38      0.50      0.43        30
+weighted avg       0.59      0.77      0.67        30
+
+============================================================
+        
